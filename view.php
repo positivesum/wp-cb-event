@@ -50,7 +50,7 @@ Array
         <tr>
             <td colspan="3">
                <br/>
-               <a href="<?php echo $event['link']; ?>">Add to Calendar</a>
+               <a href="<?php echo $event['link']; ?>"><i class="ico"></i>Add to Calendar</a>
             </td>
         </tr>
         </tbody>
