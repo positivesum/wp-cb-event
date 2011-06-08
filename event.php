@@ -14,11 +14,57 @@ if (!class_exists('cfct_module_event')) {
                 'description'   => __('Allows to add event into pages', 'carrington-build'),
                 'icon'          => $this->pluginDir.'/icon.png'
             );
+            // Register new hook for download link
+            add_action('page_template', array($this, 'download_ics'), 999);
+
+            // Register new query vars
+            add_filter('query_vars', array($this, 'query_vars'));
+
             // Init new module
             cfct_build_module::__construct('cfct-module-event', __('Event', 'carrington-build'), $opts);
 		}
 
-		public function display($data) {
+        public function download_ics($template) {
+            global $post;
+
+            $ics = get_query_var('ics');
+            if (!$ics)
+                return $template;
+
+            // Get data
+            $meta = array_shift(get_post_meta($post->ID, '_cfct_build_data'));
+
+            if (!isset($meta['data']['modules']['cfct-module-'.$ics]))
+                return $template;
+
+            $data = $meta['data']['modules']['cfct-module-'.$ics];
+            $event = $this->get_event_var($data);
+
+            $ics = $this->get_ics($event);
+
+            $slug = preg_replace("/[^a-zA-Z0-9 ]/", "", $event['name']);
+            $slug = str_replace(" ", "-", trim($slug));
+
+            header("Cache-Control: public");
+            header("Content-Description: File Transfer");
+            header("Content-Disposition: attachment; filename=".$slug.'.ics');
+            header("Content-Type: application/ics");
+            header("Content-Transfer-Encoding: binary");
+
+            echo $ics;
+
+            exit;
+        }
+
+        public function query_vars($vars) {
+            $vars[] = 'ics';
+
+            return $vars;
+        }
+
+        public function get_event_var($data) {
+            global $post;
+
             // Standart params
             $event = array(
                 'name' => $data[$this->get_field_name('event_name')],
@@ -49,9 +95,18 @@ if (!class_exists('cfct_module_event')) {
                         $event['date']['jj'],  // Day
                         $event['date']['aa']   // Year
                     );
-            $event['date']['timestamp'] = $timestamp;
 
-            return $this->load_view($data, compact('event'));
+            $event['date']['timestamp'] = $timestamp;
+            $event['link'] = get_permalink($post->ID).'?ics='.str_replace('cfct-module-', '', $data['module_id']);
+
+            return $event;
+
+        }
+
+		public function display($data) {
+            $event = $this->get_event_var($data);
+
+            return $this->load_view($data, compact('event', 'data'));
 		}
 
 		public function update($new_data, $old_data) {
@@ -125,6 +180,27 @@ if (!class_exists('cfct_module_event')) {
             return '<div id="timestampdiv"><div class="timestamp-wrap">'.
                     sprintf(__('%1$s%2$s, %3$s @ %4$s : %5$s %6$s'), $month, $day, $year, $hour, $minute, $zone).
                     '</div></div>';
+        }
+
+        public function get_ics($event) {
+            // Generate time
+            $time = date('Ymd', $event['date']['timestamp']).'T'.date('His', $event['date']['timestamp']).'Z';
+            $ics  = array(
+                "BEGIN:VCALENDAR",
+                "PRODID:-//D&H//D&H Events & Presentations 1.0//EN",
+                "VERSION:2.0",
+                "CALSCALE:GREGORIAN",
+                "BEGIN:VEVENT",
+                "DTSTART:".$time,
+                "DTSTAMP:".$time,
+                "LOCATION:".$event['location']['name'].' '.$event['location']['address'].' '.$event['location']['city'],
+                "SUMMARY:".$event['name'],
+                "END:VEVENT",
+                "END:VCALENDAR"
+            );
+
+            return implode("\n", $ics);
+
         }
 
         public function get_tz($data) {

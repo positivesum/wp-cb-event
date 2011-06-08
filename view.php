@@ -27,29 +27,33 @@ Array
 )
 */
 ?>
-
-<div class="event" itemscope itemtype ="http://schema.org/Event">
-    <!-- Event Name -->
-    <div class="name" itemprop="name"><?php echo $event['name']; ?></div>
-
-    <div class="col-abc">
-        <div class="col-a">
-            <span>Location:</span>
-        </div>
-        <div class="col-b">
-            <div itemprop="location" itemscope itemtype="http://schema.org/PostalAddress">
-                <!-- Location Name -->
-                <div itemprop="name"><?php echo $event['location']['name']; ?></div>
-                <!-- Location Address -->
-                <div itemprop="streetAddress"><?php echo $event['location']['address']; ?></div>
-            </div>
-        </div>
-        <div class="col-c">
-            <time itemprop="startDate" datetime="<?php echo date('c', $event['date']['timestamp']) ?>">
-                <span class="date">Date:</span><?php echo date('M, j, Y', $event['date']['timestamp']) ?><br/>
-                <span class="time">Time:</span><?php echo date('g:i a T'); ?>
-            </time>
-        </div>
-    </div>
-    <div class="icl"></div>
+<div class="event" itemscope itemtype="http://schema.org/Event">
+    <h4 itemprop="name"><?php echo $event['name']; ?></h4>
+    <table>
+        <tbody>
+            <tr>
+                <td>Location:</td>
+                <td>
+                    <div itemprop="location" itemscope itemtype="http://schema.org/PostalAddress">
+                        <em itemprop="name"><?php echo $event['location']['name']; ?></em><br/>
+                        <span itemprop="streetAddress"><?php echo $event['location']['address']; ?></span><br/>
+                        <span itemprop="addressLocality"><?php echo $event['location']['city']; ?></span><br/>
+                    </div>
+                </td>
+                <td>
+                    <time itemprop="startDate" datetime="<?php echo date('c', $event['date']['timestamp']) ?>">
+                        Date:&nbsp;<?php echo date('M, j, Y', $event['date']['timestamp']) ?><br/>
+                        Time:&nbsp;<?php echo date('g:i a', $event['date']['timestamp']).'&nbsp;'.strtoupper($event['date']['tz']); ?>
+                    </time>
+                </td>
+            </tr>
+        <tr>
+            <td colspan="3">
+               <br/>
+               <a href="<?php echo $event['link']; ?>">Add to Calendar</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </div>
+
